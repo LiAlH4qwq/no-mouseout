@@ -134,25 +134,7 @@ const handleDocInnerLevel2 = async (doc) => {
             body.appendChild(banjiangIframe);
             log("tried injecting a banjiang music player!");
             await sleep(10);
-            const maybeCourses = await getCourses(doc);
-            maybeCourses
-                .next(courses => {
-                const maybeNextCourse = getNextCourse(courses);
-                maybeNextCourse
-                    .next(nextCourse => {
-                    nextCourse.click();
-                    return resultPass(nextCourse);
-                })
-                    .transError(error => {
-                    log("no next course, finale!");
-                    return error;
-                });
-                return resultPass(courses);
-            })
-                .transError(error => {
-                log("can't get courses!");
-                return error;
-            });
+            nextCourse(document);
         });
         return resultPass(videoElem);
     })
@@ -190,6 +172,28 @@ const addRefreshing = async (doc) => {
     })
         .transError(error => {
         log("Course List not found!");
+        return error;
+    });
+};
+const nextCourse = async (doc) => {
+    const maybeCourses = await getCourses(doc);
+    maybeCourses
+        .next(courses => {
+        const maybeNextCourse = getNextCourse(courses);
+        maybeNextCourse
+            .next(nextCourse => {
+            log(nextCourse);
+            nextCourse.click();
+            return resultPass(nextCourse);
+        })
+            .transError(error => {
+            log("no next course, finale!");
+            return error;
+        });
+        return resultPass(courses);
+    })
+        .transError(error => {
+        log("can't get courses!");
         return error;
     });
 };
