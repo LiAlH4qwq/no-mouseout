@@ -3,12 +3,14 @@ const resultPass = (value) => ({
     pass: true,
     value,
     next: (f) => f(value),
+    nextAsync: async (f) => await f(value),
     transError: (_) => resultPass(value)
 });
 const resultError = (error) => ({
     pass: false,
     error,
     next: (_) => resultError(error),
+    nextAsync: async (_) => resultError(error),
     transError: (f) => resultError(f(error))
 });
 const errorElementNotFound = () => "ElementNotFoundError";
@@ -17,6 +19,20 @@ const findElement = (on) => (selector) => {
     if (rawResult === null)
         return resultError(errorElementNotFound());
     return resultPass(rawResult);
+};
+const findElements = (on) => (selector) => {
+    const rawResult = on.querySelectorAll(selector);
+    const rawResultArray = Array.from(rawResult);
+    if (rawResultArray.length <= 0)
+        return resultError(errorElementNotFound());
+    return resultPass(rawResultArray);
+};
+const getNextCourse = (courses) => {
+    const curCourse = courses.filter(course => course.parentElement?.classList.contains("posCatalog_active")).at(0);
+    const curIndex = courses.indexOf(curCourse);
+    if (curIndex >= courses.length)
+        return resultError(errorElementNotFound());
+    return resultPass(courses.at(curIndex + 1));
 };
 const log = async (msg) => println(`[No Mouseout] ${msg}`);
 const println = async (msg) => console.log(msg);
@@ -44,6 +60,7 @@ const waitElement = (sec) => (on) => (locator) => {
 };
 const main = async (doc) => {
     fireMouseout(doc);
+    addRefreshing(doc);
     notifyVideoFinish(doc);
 };
 const fireMouseout = async (doc) => {
@@ -111,17 +128,86 @@ const handleDocInnerLevel2 = async (doc) => {
         const video = videoElem;
         video.play();
         video.volume = 0.01;
-        video.addEventListener("ended", _ => {
+        video.addEventListener("ended", async (_) => {
             const banjiangIframe = document.createElement("iframe");
             banjiangIframe.src = "//music.163.com/outchain/player?type=2&id=2541479&auto=1";
             body.appendChild(banjiangIframe);
             log("tried injecting a banjiang music player!");
+            await sleep(10);
+            const maybeCourses = await getCourses(doc);
+            maybeCourses
+                .next(courses => {
+                const maybeNextCourse = getNextCourse(courses);
+                maybeNextCourse
+                    .next(nextCourse => {
+                    nextCourse.click();
+                    return resultPass(nextCourse);
+                })
+                    .transError(error => {
+                    log("no next course, finale!");
+                    return error;
+                });
+                return resultPass(courses);
+            })
+                .transError(error => {
+                log("can't get courses!");
+                return error;
+            });
         });
-        log("Video injected!");
         return resultPass(videoElem);
     })
         .transError(error => {
         log("Video not found!");
+        return error;
+    });
+};
+const addRefreshing = async (doc) => {
+    const body = doc.body;
+    const findOnBody = findElement(body);
+    const waitEle10s = waitElement(10);
+    const waitEle10sOnBody = waitEle10s(body);
+    const maybeCourseList = await waitEle10sOnBody(() => findOnBody("#coursetree"));
+    await sleep(10);
+    maybeCourseList
+        .next(courseListElem => {
+        const findsOnCourseList = findElements(courseListElem);
+        const maybeCourses = findsOnCourseList(".posCatalog_name");
+        maybeCourses
+            .next(courses => {
+            log(courses.length);
+            courses.map(course => {
+                course.addEventListener("click", (_) => doc.location.reload());
+                log(course);
+            });
+            log("added refreshing for every course!");
+            return resultPass(courses);
+        })
+            .transError(error => {
+            log("Course List is empty!");
+            return error;
+        });
+        return resultPass(courseListElem);
+    })
+        .transError(error => {
+        log("Course List not found!");
+        return error;
+    });
+};
+const getCourses = async (doc) => {
+    const body = doc.body;
+    const findOnBody = findElement(body);
+    const waitEle10s = waitElement(10);
+    const waitEle10sOnBody = waitEle10s(body);
+    const maybeCourseList = await waitEle10sOnBody(() => findOnBody("#coursetree"));
+    await sleep(10);
+    return maybeCourseList
+        .next(courseListElem => {
+        const findsOnCourseList = findElements(courseListElem);
+        const maybeCourses = findsOnCourseList(".posCatalog_name");
+        return maybeCourses;
+    })
+        .transError(error => {
+        log("Course List not found!");
         return error;
     });
 };
