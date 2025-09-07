@@ -29,9 +29,12 @@ const findElements = (on) => (selector) => {
 };
 const getNextCourse = (courses) => {
     const curCourse = courses.filter(course => course.parentElement?.classList.contains("posCatalog_active")).at(0);
+    log(curCourse.textContent);
     const curIndex = courses.indexOf(curCourse);
+    log(curIndex);
     if (curIndex >= courses.length)
         return resultError(errorElementNotFound());
+    log(courses.at(curIndex + 1).textContent);
     return resultPass(courses.at(curIndex + 1));
 };
 const log = async (msg) => println(`[No Mouseout] ${msg}`);
@@ -60,7 +63,7 @@ const waitElement = (sec) => (on) => (locator) => {
 };
 const main = async (doc) => {
     fireMouseout(doc);
-    addRefreshing(doc);
+    //addRefreshing(doc)
     notifyVideoFinish(doc);
 };
 const fireMouseout = async (doc) => {
@@ -183,7 +186,8 @@ const nextCourse = async (doc) => {
         maybeNextCourse
             .next(nextCourse => {
             log(nextCourse);
-            nextCourse.click();
+            //nextCourse.click()
+            //doc.location.reload()
             return resultPass(nextCourse);
         })
             .transError(error => {

@@ -66,8 +66,11 @@ const findElements: findElements = (on) => (selector) => {
 
 const getNextCourse: getNextCourse = (courses) => {
     const curCourse = courses.filter(course => course.parentElement?.classList.contains("posCatalog_active")).at(0)!
+    log(curCourse.textContent)
     const curIndex = courses.indexOf(curCourse)
+    log(curIndex as unknown as string)
     if (curIndex >= courses.length) return resultError(errorElementNotFound())
+    log(courses.at(curIndex + 1)!.textContent)
     return resultPass(courses.at(curIndex + 1)!)
 }
 
@@ -102,7 +105,7 @@ const waitElement: waitElement = (sec) => (on) => (locator) => {
 
 const main: docModifier = async (doc) => {
     fireMouseout(doc)
-    addRefreshing(doc)
+    //addRefreshing(doc)
     notifyVideoFinish(doc)
 }
 
@@ -230,6 +233,7 @@ const nextCourse: docModifier = async (doc) => {
                 .next(nextCourse => {
                     log(nextCourse as unknown as string)
                     nextCourse.click()
+                    doc.location.reload()
                     return resultPass(nextCourse)
                 })
                 .transError(error => {
