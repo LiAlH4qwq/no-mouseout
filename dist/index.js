@@ -186,8 +186,8 @@ const nextCourse = async (doc) => {
         maybeNextCourse
             .next(nextCourse => {
             log(nextCourse);
-            //nextCourse.click()
-            //doc.location.reload()
+            nextCourse.click();
+            sleep(10).then(_ => doc.location.reload());
             return resultPass(nextCourse);
         })
             .transError(error => {

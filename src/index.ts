@@ -233,7 +233,7 @@ const nextCourse: docModifier = async (doc) => {
                 .next(nextCourse => {
                     log(nextCourse as unknown as string)
                     nextCourse.click()
-                    doc.location.reload()
+                    sleep(10).then(_ => doc.location.reload())
                     return resultPass(nextCourse)
                 })
                 .transError(error => {
