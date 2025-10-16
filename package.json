@@ -1,0 +1,20 @@
+{
+  "name": "no-mouseout",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.6",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "effect": "^3.18.4"
+  },
+  "scripts": {
+    "pack": "bun build src/index.ts --outdir ./dist --sourcemap=external --minify --footer=\"/*\nGenshin Impact\nStep Into a Vast Magical World of Adventure\n*/\" --banner=\"/*\nNo Mouseout\nA Genshin Impact aiding toolkit\n*/\"",
+    "dev": "bun run pack --watch"
+  }
+}
