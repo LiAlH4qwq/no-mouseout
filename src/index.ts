@@ -12,11 +12,7 @@ const main = (doc: Document) =>
 
 const fireMouseout = (doc: Document) =>
     Effect.sync(() =>
-        doc.addEventListener(
-            "mouseout",
-            event => event.stopPropagation(),
-            true,
-        ),
+        doc.addEventListener("mouseout", e => e.stopPropagation(), true),
     ).pipe(Effect.flatMap(_ => log("mouseout event fired!")))
 
 const videoAutoFinish = (doc: Document) =>
@@ -41,17 +37,19 @@ const videoAutoFinish = (doc: Document) =>
         yield* Effect.sleep(Duration.seconds(10))
         const courses = yield* getCourses(doc)
         yield* addRefreshing(courses)
-        const nextCourse = yield* getNextCourse(courses)
         yield* playVideo(video)
         yield* minVideoVol(video)
-        yield* addEL(video)("ended")(_ => {
-            const bjIframe = doc.createElement("iframe")
-            bjIframe.src =
-                "//music.163.com/outchain/player?type=2&id=2541479&auto=1"
-            body.appendChild(bjIframe)
-            log("injected a banjiang iframe!").pipe(Effect.runFork)
-            setTimeout(() => nextCourse.click(), 10 * 1000)
-        })
+        yield* addEL(video)("ended")(_ =>
+            Effect.gen(function* () {
+                const bjIframe = doc.createElement("iframe")
+                bjIframe.src =
+                    "//music.163.com/outchain/player?type=2&id=2541479&auto=1"
+                yield* addChild(body)(bjIframe)
+                yield* log("injected a banjiang iframe!")
+                yield* Effect.sleep(Duration.seconds(10))
+                yield* getNextCourse(courses).pipe(Effect.flatMap(clickEle))
+            }).pipe(Effect.runFork),
+        )
         yield* log("video injected!")
     })
 
@@ -109,6 +107,11 @@ const playVideo = (video: HTMLVideoElement) =>
 const addEL =
     (ele: Element) => (eName: string) => (eL: (e: Event) => unknown) =>
         Effect.sync(() => ele.addEventListener(eName, eL))
+
+const addChild = (on: Element) => (child: Element) =>
+    Effect.sync(() => on.appendChild(child)).pipe(Effect.asVoid)
+
+const clickEle = (ele: HTMLElement) => Effect.sync(() => ele.click())
 
 const waitEle =
     (sec: number) =>
